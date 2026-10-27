@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Legacy Game Tools</string>
+    <string name="description">Compatibility fixes for supported older games</string>
+    <string name="heading">Game compatibility</string>
+    <string name="setup">Enable this module in Vector (Xposed API 102), select the two supported games, then close and reopen each game. No device restart is needed.</string>
+    <string name="compatibility">Enable compatibility fix</string>
+    <string name="restart_note">Changes apply the next time the game process starts.</string>
+    <string name="open_game">Open game</string>
+    <string name="not_installed">Not installed</string>
+    <string name="not_run">Not checked yet</string>
+    <string name="active">Compatibility enabled</string>
+    <string name="last_status">Last launch: %1$s</string>
+    <string name="disabled">Compatibility disabled</string>
+    <string name="unsupported">This engine version is not supported</string>
+    <string name="failed">Compatibility could not be loaded</string>
+    <string name="waiting">Waiting for the game engine</string>
+    <string name="scope_note">Supports D4DJ D4U 1.2.1 and the installed セカイ 1.0.0 (com.sega.pjsekai.re), arm64. Fixes an old Unity memory-tracking crash. Does not provide game content or restore online services.</string>
+    <string name="about">About</string>
+    <string name="source">Source code</string>
+    <string name="licenses">Open source licenses</string>
+    <string name="close">Close</string>
+</resources>

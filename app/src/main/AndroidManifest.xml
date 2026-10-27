@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries>
+        <package android:name="com.bushiroad.d4djddedition"/>
+        <package android:name="com.sega.pjsekai.re"/>
+    </queries>
+    <application android:label="@string/app_name" android:description="@string/description" android:theme="@style/Theme.LegacyGameTools" android:icon="@drawable/ic_launcher" android:allowBackup="false" android:supportsRtl="true">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <provider android:name=".ConfigProvider" android:authorities="dev.ryuya.legacygametools.config" android:exported="true" android:grantUriPermissions="false"/>
+    </application>
+</manifest>

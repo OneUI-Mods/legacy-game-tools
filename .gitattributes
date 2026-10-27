@@ -1,0 +1,2 @@
+third_party/*.txt -whitespace
+app/src/main/assets/*NOTICE.txt -whitespace

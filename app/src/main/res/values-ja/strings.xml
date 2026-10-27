@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Legacy Game Tools</string>
+    <string name="description">対応する古いゲームの起動互換性を改善します</string>
+    <string name="heading">ゲームの起動互換性</string>
+    <string name="setup">Vector（Xposed API 102）でこのモジュールを有効にし、対象の2本を選択してください。その後、各ゲームを終了して開き直すと反映されます。端末の再起動は不要です。</string>
+    <string name="compatibility">起動互換修正を使う</string>
+    <string name="restart_note">変更はゲームのプロセスを起動し直すと反映されます。</string>
+    <string name="open_game">ゲームを開く</string>
+    <string name="not_installed">未インストール</string>
+    <string name="not_run">まだ確認していません</string>
+    <string name="active">互換修正が有効</string>
+    <string name="last_status">前回の起動：%1$s</string>
+    <string name="disabled">互換修正はOFFです</string>
+    <string name="unsupported">このエンジンの版には未対応です</string>
+    <string name="failed">互換修正を読み込めませんでした</string>
+    <string name="waiting">ゲームエンジンの起動を待っています</string>
+    <string name="scope_note">対象：グルミクD4U 1.2.1、端末の「セカイ」1.0.0（com.sega.pjsekai.re）のarm64版。古いUnityのメモリ管理によるクラッシュを修正します。ゲームデータの配布やオンラインサービスの復旧は行いません。</string>
+    <string name="about">このアプリについて</string>
+    <string name="source">ソースコード</string>
+    <string name="licenses">オープンソースライセンス</string>
+    <string name="close">閉じる</string>
+</resources>

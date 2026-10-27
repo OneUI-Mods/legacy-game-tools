@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.22)
+project(legacycompat LANGUAGES CXX)
+add_library(legacycompat SHARED Compatibility.cpp)
+target_compile_features(legacycompat PRIVATE cxx_std_20)
+target_compile_options(legacycompat PRIVATE -Wall -Wextra -Werror -fvisibility=hidden)
+target_link_options(legacycompat PRIVATE -Wl,-z,max-page-size=16384)
+target_link_libraries(legacycompat PRIVATE log dl)
