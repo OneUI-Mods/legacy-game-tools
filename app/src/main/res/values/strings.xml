@@ -19,4 +19,6 @@
     <string name="source">Source code</string>
     <string name="licenses">Open source licenses</string>
     <string name="close">Close</string>
+    <string name="prevent_life_loss">Prevent life loss during lives</string>
+    <string name="prevent_life_loss_note">Enabled by default for the supported Sekai trial. Miss judgements and scores remain unchanged. Requires compatibility fixes to be enabled.</string>
 </resources>

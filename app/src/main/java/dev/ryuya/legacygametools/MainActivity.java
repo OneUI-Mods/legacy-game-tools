@@ -97,6 +97,22 @@ public final class MainActivity extends AppCompatActivity {
     toggle.setOnCheckedChangeListener(
         (button, checked) -> preferences.edit().putBoolean(game, checked).apply());
     card.addView(toggle);
+    if (Games.SEKAI.equals(game)) {
+      MaterialSwitch life = new MaterialSwitch(this);
+      life.setText(R.string.prevent_life_loss);
+      life.setMinHeight(dp(56));
+      life.setChecked(preferences.getBoolean("sekai.prevent_life_loss", true));
+      life.setEnabled(toggle.isChecked());
+      life.setOnCheckedChangeListener(
+          (button, checked) -> preferences.edit().putBoolean("sekai.prevent_life_loss", checked).apply());
+      toggle.setOnCheckedChangeListener(
+          (button, checked) -> {
+            preferences.edit().putBoolean(game, checked).apply();
+            life.setEnabled(checked);
+          });
+      card.addView(life);
+      card.addView(text(getString(R.string.prevent_life_loss_note), false));
+    }
     card.addView(text(getString(R.string.restart_note), false));
     MaterialTextView status = text("", false);
     statuses.put(game, status);
