@@ -4,6 +4,7 @@
 #include "SekaiBpmHook.h"
 #include "SekaiLifeHook.h"
 #include "SekaiFlowHook.h"
+#include "SekaiReadyHook.h"
 
 #include <android/log.h>
 #include <atomic>
@@ -188,6 +189,7 @@ void libraryLoaded(const char *name, void *handle) {
   legacy::sekai::libraryLoaded(name, handle);
   legacy::sekai::life::libraryLoaded(name, handle);
   legacy::sekai::flow::libraryLoaded(name, handle);
+  legacy::sekai::ready::libraryLoaded(name, handle);
   if (name && !grpcExtraRoot.empty() && !grpcHookInstalled && std::string(name).ends_with("libgrpc_csharp_ext.so")) {
     std::lock_guard lock(grpcHookMutex);
     if (grpcHookInstalled) return;
@@ -220,6 +222,7 @@ LibraryLoaded native_init(const NativeApi *api) {
   legacy::sekai::setHookApi(api->hook);
   legacy::sekai::life::setHookApi(api->hook);
   legacy::sekai::flow::setHookApi(api->hook, api->unhook);
+  legacy::sekai::ready::setHookApi(api->hook, api->unhook);
   report("ready");
   return libraryLoaded;
 }
@@ -265,4 +268,5 @@ extern "C" JNIEXPORT void JNICALL
 Java_dev_ryuya_legacygametools_HookEntry_configureSekaiFlow(
     JNIEnv *, jclass, jboolean titleTap, jboolean fastTransition) {
   legacy::sekai::flow::configure(titleTap, fastTransition);
+  legacy::sekai::ready::configure(fastTransition);
 }

@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process';
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const folder = mkdtempSync(join(tmpdir(), 'legacy-native-'));
 try {
-  for (const name of ['overflow_tracker_test', 'sekai_bpm_policy_test', 'sekai_life_policy_test', 'sekai_flow_policy_test']) {
+  for (const name of ['overflow_tracker_test', 'sekai_bpm_policy_test', 'sekai_life_policy_test', 'sekai_flow_policy_test', 'sekai_ready_policy_test']) {
     const binary = join(folder, name);
     for (const [command, args] of [
       [process.env.CXX || 'clang++', ['-std=c++20', '-Wall', '-Wextra', '-Werror', join(root, 'tests', name + '.cpp'), '-o', binary]],
