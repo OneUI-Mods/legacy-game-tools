@@ -17,6 +17,10 @@ public final class HookEntry extends XposedModule {
 
   private static native String nativeStatus();
 
+  private static native void configureGrpcCa(String path);
+
+  private static native void configureSekaiBpm(boolean allowed);
+
   @Override
   public void onModuleLoaded(XposedModuleInterface.ModuleLoadedParam param) {
     processName = param.getProcessName();
@@ -39,6 +43,18 @@ public final class HookEntry extends XposedModule {
                   enabled = settings != null && settings.getBoolean("enabled", false);
                   System.loadLibrary("legacycompat");
                   configure(enabled);
+                  boolean sekaiBpm = false;
+                  if (enabled && Games.SEKAI.equals(game)) {
+                    var info = context.getPackageManager().getPackageInfo(game, 0);
+                    sekaiBpm =
+                        info.getLongVersionCode() == 200005L && "1.0.0".equals(info.versionName);
+                  }
+                  configureSekaiBpm(sekaiBpm);
+                  if (Games.D4U.equals(game) && context.getExternalFilesDir(null) != null) {
+                    var ca =
+                        new java.io.File(context.getExternalFilesDir(null), "local-grpc-ca.pem");
+                    if (ca.isFile()) configureGrpcCa(ca.getAbsolutePath());
+                  }
                   Log.i("LegacyGameTools", game + " compatibility=" + enabled);
                 } catch (Throwable error) {
                   log(Log.ERROR, "LegacyGameTools", "Could not initialize compatibility", error);

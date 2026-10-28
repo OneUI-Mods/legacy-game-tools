@@ -33,3 +33,7 @@ python3 tools/check_native.py
 Android 17の実機では修正前に2本とも同じ追跡系統で起動クラッシュを確認しました。修正後は2本の互換処理の有効化とプロセスの継続を確認し、D4Uは「Connecting…」、セカイはSEGAロゴ後の未成年向け注意書きまで描画されました。サービス終了後の通信待ちや、プレイ全体は確認対象に含めません。
 
 実機のログ・スクリーンショット・抽出した共有ライブラリ・署名情報は公開ソースに追加しません。診断目的で強制終了したのは対象ゲーム2本だけです。端末・SystemUI・One UIホームは再起動していません。
+
+## セカイの英数字BPM ID
+
+対象バージョン・ELF照合・呼び出し元とパターンの限定・検査は[実装メモ](sekai-bpm.md)を参照してください。Pythonを使わないビルドは `node tools/check_native.mjs` と `node tools/package_release.mjs --source-ref HEAD` で実行できます。
