@@ -23,7 +23,9 @@ using ClassName = const char *(*)(void *);
 using GameTime = float (*)(const void *);
 using WriteBarrier = void (*)(void *, void **, void *);
 Move originalMove = nullptr;
-Callback originalFinish = nullptr, destroy = nullptr;
+Callback originalFinish = nullptr, originalDestroy = nullptr;
+using GameFrame = int32_t (*)(const void *);
+GameFrame gameFrame = nullptr;
 NewWeak newWeak = nullptr;
 Target target = nullptr;
 Free freeHandle = nullptr;
@@ -38,8 +40,9 @@ std::mutex installMutex;
 // This single-player coroutine and Finish run synchronously on Unity's main thread.
 bool captureFinish = false;
 struct Session {
-  uint32_t iterator = 0, transition = 0, fader = 0;
-  bool waiting = false, observedFading = false;
+  uint32_t iterator = 0, fader = 0, transition = 0;
+  bool waiting = false, observedFading = false, transitionFinished = false;
+  int32_t destroyFrame = -1;
   float deadline = 0;
 } session;
 
@@ -49,7 +52,7 @@ template <typename T> T field(void *object, size_t offset) {
   return value;
 }
 void reset() {
-  for (uint32_t handle : {session.iterator, session.transition, session.fader}) {
+  for (uint32_t handle : {session.iterator, session.fader, session.transition}) {
     if (handle) {
       freeHandle(handle);
     }
@@ -65,9 +68,19 @@ void finish(void *transition, const void *method) {
   if (!fader) {
     return;
   }
-  session.transition = newWeak(transition, false);
   session.fader = newWeak(fader, false);
+  session.transition = newWeak(transition, false);
   session.observedFading = field<int32_t>(fader, 0x7c) == 1;
+}
+
+void transitionDestroyed(void *transition, const void *method) {
+  const bool tracked = session.transition && target(session.transition) == transition;
+  originalDestroy(transition, method);
+  if (tracked) {
+    session.transitionFinished = true;
+    session.destroyFrame = gameFrame(nullptr);
+    __android_log_print(ANDROID_LOG_INFO, "LegacyGameTools", "sekai_live_transition_native_end");
+  }
 }
 
 bool move(void *iterator, const void *method) {
@@ -79,15 +92,15 @@ bool move(void *iterator, const void *method) {
       void *fader = target(session.fader);
       // Losing the weak target is not proof of completion. Fall back to the original deadline.
       const auto decision =
-          decide(session.observedFading, !fader || field<int32_t>(fader, 0x7c) != 0, enabled.load(),
-                 gameTime(nullptr), session.deadline);
+          decide(session.observedFading, !fader || field<int32_t>(fader, 0x7c) != 0,
+                 session.transitionFinished && gameFrame(nullptr) > session.destroyFrame,
+                 enabled.load(), gameTime(nullptr), session.deadline);
       if (decision == Decision::Wait) {
         return true; // Current remains null: poll next frame.
       }
       if (decision == Decision::Ready) {
-        if (void *transition = target(session.transition)) {
-          destroy(transition, nullptr);
-        }
+        // Keep the native transition cleanup and particle lifetime intact.
+        // Both completion signals release only the wait, never the visual effect.
         __android_log_print(ANDROID_LOG_INFO, "LegacyGameTools", "sekai_live_wait_completed_early");
       } else {
         __android_log_print(ANDROID_LOG_INFO, "LegacyGameTools",
@@ -158,15 +171,22 @@ int inspect(dl_phdr_info *info, size_t, void *) {
   objectClass = reinterpret_cast<ObjectClass>(base + 0x12bc760);
   className = reinterpret_cast<ClassName>(base + 0x12bbe9c);
   gameTime = reinterpret_cast<GameTime>(base + 0x2386594);
+  gameFrame = reinterpret_cast<GameFrame>(base + 0x23867ac);
   writeBarrier = reinterpret_cast<WriteBarrier>(base + 0x12bc670);
-  destroy = reinterpret_cast<Callback>(base + kDestroy);
   void *finishTarget = reinterpret_cast<void *>(base + kFinish);
+  void *destroyTarget = reinterpret_cast<void *>(base + kDestroy);
   if (installHook(finishTarget, reinterpret_cast<void *>(finish),
                   reinterpret_cast<void **>(&originalFinish)) != 0) {
     return 1;
   }
+  if (installHook(destroyTarget, reinterpret_cast<void *>(transitionDestroyed),
+                  reinterpret_cast<void **>(&originalDestroy)) != 0) {
+    removeHook(finishTarget);
+    return 1;
+  }
   if (installHook(reinterpret_cast<void *>(base + kMove), reinterpret_cast<void *>(move),
                   reinterpret_cast<void **>(&originalMove)) != 0) {
+    removeHook(destroyTarget);
     removeHook(finishTarget);
     return 1;
   }

@@ -23,6 +23,8 @@ public final class HookEntry extends XposedModule {
 
   private static native void configureSekaiLife(boolean enabled);
 
+  private static native void setSekaiFocused(boolean focused);
+
   private static native void configureSekaiFlow(boolean titleTap, boolean fastTransition);
 
   @Override
@@ -52,6 +54,16 @@ public final class HookEntry extends XposedModule {
                     var info = context.getPackageManager().getPackageInfo(game, 0);
                     sekaiBpm =
                         info.getLongVersionCode() == 200005L && "1.0.0".equals(info.versionName);
+                  }
+                  if (sekaiBpm) {
+                    var unity = context.getClassLoader().loadClass("com.unity3d.player.UnityPlayer");
+                    var focus = unity.getDeclaredMethod("windowFocusChanged", boolean.class);
+                    hook(focus)
+                        .intercept(
+                            focusChain -> {
+                              setSekaiFocused((Boolean) focusChain.getArgs().get(0));
+                              return focusChain.proceed();
+                            });
                   }
                   configureSekaiBpm(sekaiBpm);
                   configureSekaiLife(

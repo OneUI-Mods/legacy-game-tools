@@ -13,4 +13,12 @@ int main() {
   assert(!isLiveFade(base + 0x16b4850, base, 1, 1));
   assert(!isLiveFade(base + 0x16b4854, base, 0, 1));
   assert(!isLiveFade(base + 0x16b4854, base, 1, 6));
+  const auto entry = liveTiming(true, base + 0x16b4854, base, 1, 1);
+  const auto exit = liveTiming(true, base + 0x16b4cc4, base, 1, 1);
+  assert(entry.delay == 0 && entry.duration == 1);
+  assert(exit.delay == 0 && exit.duration == 1);
+  const auto disabled = liveTiming(false, base + 0x16b4854, base, 1, 1);
+  assert(disabled.delay == 1 && disabled.duration == 1);
+  const auto unrelated = liveTiming(true, base + 0x16b4850, base, 1, 1);
+  assert(unrelated.delay == 1 && unrelated.duration == 1);
 }

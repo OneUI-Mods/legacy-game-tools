@@ -18,8 +18,8 @@ android {
         applicationId = "dev.ryuya.legacygametools"
         minSdk = 31
         targetSdk = 37
-        versionCode = 6
-        versionName = "0.2.0-rc4"
+        versionCode = 10
+        versionName = "0.2.0-rc8"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DANDROID_STL=c++_static" } }
     }

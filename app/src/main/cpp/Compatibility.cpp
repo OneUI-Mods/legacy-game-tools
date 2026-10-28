@@ -270,3 +270,8 @@ Java_dev_ryuya_legacygametools_HookEntry_configureSekaiFlow(
   legacy::sekai::flow::configure(titleTap, fastTransition);
   legacy::sekai::ready::configure(fastTransition);
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_dev_ryuya_legacygametools_HookEntry_setSekaiFocused(JNIEnv *, jclass, jboolean focused) {
+  legacy::sekai::flow::setFocused(focused);
+}
