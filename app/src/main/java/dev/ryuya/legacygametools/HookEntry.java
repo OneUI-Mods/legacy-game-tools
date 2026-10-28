@@ -23,6 +23,8 @@ public final class HookEntry extends XposedModule {
 
   private static native void configureSekaiLife(boolean enabled);
 
+  private static native void configureSekaiFlow(boolean titleTap, boolean fastTransition);
+
   @Override
   public void onModuleLoaded(XposedModuleInterface.ModuleLoadedParam param) {
     processName = param.getProcessName();
@@ -54,6 +56,9 @@ public final class HookEntry extends XposedModule {
                   configureSekaiBpm(sekaiBpm);
                   configureSekaiLife(
                       sekaiBpm && settings != null && settings.getBoolean("prevent_life_loss", true));
+                  configureSekaiFlow(
+                      sekaiBpm && settings != null && settings.getBoolean("title_tap", true),
+                      sekaiBpm && settings != null && settings.getBoolean("fast_transition", true));
                   if (Games.D4U.equals(game) && context.getExternalFilesDir(null) != null) {
                     var ca =
                         new java.io.File(context.getExternalFilesDir(null), "local-grpc-ca.pem");

@@ -109,9 +109,14 @@ public final class MainActivity extends AppCompatActivity {
           (button, checked) -> {
             preferences.edit().putBoolean(game, checked).apply();
             life.setEnabled(checked);
+            card.findViewWithTag("title_tap").setEnabled(checked);
+            card.findViewWithTag("fast_transition").setEnabled(checked);
           });
       card.addView(life);
       card.addView(text(getString(R.string.prevent_life_loss_note), false));
+      addSekaiOption(card, "title_tap", R.string.title_tap, toggle.isChecked());
+      addSekaiOption(card, "fast_transition", R.string.fast_transition, toggle.isChecked());
+      card.addView(text(getString(R.string.fast_transition_note), false));
     }
     card.addView(text(getString(R.string.restart_note), false));
     MaterialTextView status = text("", false);
@@ -125,6 +130,18 @@ public final class MainActivity extends AppCompatActivity {
           if (launch != null) startActivity(launch);
         });
     card.addView(open);
+  }
+
+  private void addSekaiOption(LinearLayout card, String key, int label, boolean enabled) {
+    MaterialSwitch option = new MaterialSwitch(this);
+    option.setTag(key);
+    option.setText(label);
+    option.setMinHeight(dp(56));
+    option.setEnabled(enabled);
+    option.setChecked(preferences.getBoolean("sekai." + key, true));
+    option.setOnCheckedChangeListener(
+        (button, checked) -> preferences.edit().putBoolean("sekai." + key, checked).apply());
+    card.addView(option);
   }
 
   @Override

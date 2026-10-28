@@ -21,4 +21,7 @@
     <string name="close">Close</string>
     <string name="prevent_life_loss">Prevent life loss during lives</string>
     <string name="prevent_life_loss_note">Enabled by default for the supported Sekai trial. Miss judgements and scores remain unchanged. Requires compatibility fixes to be enabled.</string>
+    <string name="title_tap">Tap to skip the title call</string>
+    <string name="fast_transition">Shorten live loading transitions</string>
+    <string name="fast_transition_note">Shortens the white transition animation. Asset loading, audio readiness and song timing are preserved.</string>
 </resources>

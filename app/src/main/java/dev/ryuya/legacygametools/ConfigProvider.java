@@ -27,10 +27,15 @@ public final class ConfigProvider extends ContentProvider {
     Bundle result = new Bundle();
     if ("read".equals(method)) {
       result.putBoolean("enabled", preferences.getBoolean(game, true));
-      result.putBoolean("prevent_life_loss",
+      result.putBoolean(
+          "prevent_life_loss",
           Games.SEKAI.equals(game) && preferences.getBoolean("sekai.prevent_life_loss", true));
-    }
-    else if ("report".equals(method) && extras != null) {
+      result.putBoolean(
+          "title_tap", Games.SEKAI.equals(game) && preferences.getBoolean("sekai.title_tap", true));
+      result.putBoolean(
+          "fast_transition",
+          Games.SEKAI.equals(game) && preferences.getBoolean("sekai.fast_transition", true));
+    } else if ("report".equals(method) && extras != null) {
       String state = extras.getString("status", "unknown");
       if (!Arrays.asList(
               "active",
