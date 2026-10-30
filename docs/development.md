@@ -37,3 +37,5 @@ Android 17の実機では修正前に2本とも同じ追跡系統で起動クラ
 ## セカイの英数字BPM ID
 
 対象バージョン・ELF照合・呼び出し元とパターンの限定・検査は[実装メモ](sekai-bpm.md)を参照してください。Pythonを使わないビルドは `node tools/check_native.mjs` と `node tools/package_release.mjs --source-ref HEAD` で実行できます。
+
+- [Kotlin移行の設計と検証範囲](kotlin-migration.md)
