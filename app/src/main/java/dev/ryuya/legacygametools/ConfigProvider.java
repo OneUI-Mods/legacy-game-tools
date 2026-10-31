@@ -25,8 +25,17 @@ public final class ConfigProvider extends ContentProvider {
       throw new SecurityException("Target game required");
     var preferences = getContext().getSharedPreferences("settings", 0);
     Bundle result = new Bundle();
-    if ("read".equals(method)) result.putBoolean("enabled", preferences.getBoolean(game, true));
-    else if ("report".equals(method) && extras != null) {
+    if ("read".equals(method)) {
+      result.putBoolean("enabled", preferences.getBoolean(game, true));
+      result.putBoolean(
+          "prevent_life_loss",
+          Games.SEKAI.equals(game) && preferences.getBoolean("sekai.prevent_life_loss", true));
+      result.putBoolean(
+          "title_tap", Games.SEKAI.equals(game) && preferences.getBoolean("sekai.title_tap", true));
+      result.putBoolean(
+          "fast_transition",
+          Games.SEKAI.equals(game) && preferences.getBoolean("sekai.fast_transition", true));
+    } else if ("report".equals(method) && extras != null) {
       String state = extras.getString("status", "unknown");
       if (!Arrays.asList(
               "active",

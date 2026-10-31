@@ -19,4 +19,9 @@
     <string name="source">ソースコード</string>
     <string name="licenses">オープンソースライセンス</string>
     <string name="close">閉じる</string>
+    <string name="prevent_life_loss">ライブ中のライフ減少を防ぐ</string>
+    <string name="prevent_life_loss_note">対応するセカイ体験版で初期状態はONです。ミス判定とスコアはそのままです。起動互換修正がONのときに有効になります。</string>
+    <string name="title_tap">タップでタイトルコールをスキップ</string>
+    <string name="fast_transition">ライブ開始の白い遷移を短縮</string>
+    <string name="fast_transition_note">白い遷移演出を短縮します。データ読み込み・音声準備・曲の同期に必要な待機は維持します。</string>
 </resources>
