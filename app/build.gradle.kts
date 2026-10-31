@@ -18,8 +18,8 @@ android {
         applicationId = "dev.ryuya.legacygametools"
         minSdk = 31
         targetSdk = 37
-        versionCode = 10
-        versionName = "0.2.0-rc8"
+        versionCode = 11
+        versionName = "0.2.0-rc9"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DANDROID_STL=c++_static" } }
     }
@@ -51,6 +51,8 @@ android {
     lint { abortOnError = true }
 }
 dependencies {
+    implementation("io.github.libxposed:service:102.0.0")
+
     compileOnly("io.github.libxposed:api:102.0.0")
     implementation("com.google.android.material:material:1.14.0")
 }

@@ -3,7 +3,7 @@
         <package android:name="com.bushiroad.d4djddedition"/>
         <package android:name="com.sega.pjsekai.re"/>
     </queries>
-    <application android:label="@string/app_name" android:description="@string/description" android:theme="@style/Theme.LegacyGameTools" android:icon="@drawable/ic_launcher" android:allowBackup="false" android:supportsRtl="true">
+    <application android:name=".ModuleApplication" android:label="@string/app_name" android:description="@string/description" android:theme="@style/Theme.LegacyGameTools" android:icon="@drawable/ic_launcher" android:allowBackup="false" android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
