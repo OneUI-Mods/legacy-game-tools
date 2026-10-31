@@ -1,9 +1,14 @@
 #include "OverflowTracker.h"
+#include "ElfIdentity.h"
+#include "NativeHookApi.h"
+#include "SekaiBpmHook.h"
 
 #include <android/log.h>
 #include <atomic>
 #include <cstring>
+#include <dlfcn.h>
 #include <elf.h>
+#include <fstream>
 #include <jni.h>
 #include <link.h>
 #include <mutex>
@@ -11,14 +16,12 @@
 
 namespace {
 constexpr char kTag[] = "LegacyGameTools";
-using InstallHook = int (*)(void *, void *, void **);
-using RemoveHook = int (*)(void *);
-using LibraryLoaded = void (*)(const char *, void *);
-struct NativeApi {
-  uint32_t version;
-  InstallHook hook;
-  RemoveHook unhook;
-};
+using legacy::InstallHook;
+using legacy::RemoveHook;
+using legacy::NativeApi;
+using legacy::LibraryLoaded;
+using legacy::buildId;
+using legacy::executableRange;
 using TrackerFunction = bool (*)(void *, uintptr_t);
 InstallHook installHook = nullptr;
 RemoveHook removeHook = nullptr;
@@ -28,6 +31,32 @@ std::atomic<bool> installed{false};
 std::mutex trackingMutex, statusMutex;
 OverflowTracker overflow;
 std::string status = "waiting";
+std::string grpcExtraRoot;
+std::string grpcCombinedRoots;
+using OverrideRoots = void (*)(const char *);
+OverrideRoots originalOverrideRoots = nullptr;
+using GrpcCreateCredentials = void *(*)(const char *, const char *, const char *);
+GrpcCreateCredentials originalGrpcCreateCredentials = nullptr;
+std::atomic<bool> grpcHookInstalled{false};
+std::mutex grpcHookMutex;
+
+// Preserve the library's normal public roots and append only the configured
+// local CA. Certificate and hostname verification remain active.
+void overrideGrpcRoots(const char *roots) {
+  std::string combined = roots ? roots : "";
+  combined += "\n" + grpcExtraRoot + "\n";
+  grpcCombinedRoots = combined;
+  originalOverrideRoots(combined.c_str());
+  __android_log_print(ANDROID_LOG_INFO, kTag, "D4U local gRPC CA added");
+}
+
+void *createGrpcCredentials(const char *roots, const char *cert, const char *key) {
+  if (roots) {
+    std::string combined = std::string(roots) + "\n" + grpcExtraRoot + "\n";
+    return originalGrpcCreateCredentials(combined.c_str(), cert, key);
+  }
+  return originalGrpcCreateCredentials(grpcCombinedRoots.empty() ? nullptr : grpcCombinedRoots.c_str(), cert, key);
+}
 
 struct Profile {
   const char *buildId;
@@ -96,55 +125,6 @@ bool erase(void *owner, uintptr_t address) {
   return originalErase(owner, address);
 }
 
-size_t alignedNoteSize(size_t size) { return (size + 3) & ~size_t(3); }
-
-std::string buildId(const dl_phdr_info &info) {
-  constexpr char hex[] = "0123456789abcdef";
-  for (size_t i = 0; i < info.dlpi_phnum; ++i) {
-    const auto &segment = info.dlpi_phdr[i];
-    if (segment.p_type != PT_NOTE) {
-      continue;
-    }
-    const auto *cursor = reinterpret_cast<const uint8_t *>(info.dlpi_addr + segment.p_vaddr);
-    const auto *end = cursor + segment.p_memsz;
-    while (static_cast<size_t>(end - cursor) >= sizeof(Elf64_Nhdr)) {
-      Elf64_Nhdr note;
-      std::memcpy(&note, cursor, sizeof(note));
-      cursor += sizeof(note);
-      const size_t nameSize = alignedNoteSize(note.n_namesz);
-      const size_t descSize = alignedNoteSize(note.n_descsz);
-      if (nameSize > static_cast<size_t>(end - cursor) ||
-          descSize > static_cast<size_t>(end - cursor) - nameSize) {
-        break;
-      }
-      if (note.n_type == NT_GNU_BUILD_ID && note.n_namesz == 4 &&
-          std::memcmp(cursor, "GNU", 4) == 0) {
-        std::string result;
-        for (uint32_t n = 0; n < note.n_descsz; ++n) {
-          uint8_t byte = cursor[nameSize + n];
-          result += hex[byte >> 4];
-          result += hex[byte & 15];
-        }
-        return result;
-      }
-      cursor += nameSize + descSize;
-    }
-  }
-  return {};
-}
-
-bool executableRange(const dl_phdr_info &info, uintptr_t offset, size_t size) {
-  for (size_t i = 0; i < info.dlpi_phnum; ++i) {
-    const auto &segment = info.dlpi_phdr[i];
-    if (segment.p_type == PT_LOAD && (segment.p_flags & PF_X) && offset >= segment.p_vaddr &&
-        offset - segment.p_vaddr <= segment.p_memsz &&
-        size <= segment.p_memsz - (offset - segment.p_vaddr)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 int inspectLibrary(dl_phdr_info *info, size_t, void *) {
   if (!info->dlpi_name || !std::string(info->dlpi_name).ends_with("/libunity.so")) {
     return 0;
@@ -202,7 +182,23 @@ int inspectLibrary(dl_phdr_info *info, size_t, void *) {
   return 1;
 }
 
-void libraryLoaded(const char *name, void *) {
+void libraryLoaded(const char *name, void *handle) {
+  legacy::sekai::libraryLoaded(name, handle);
+  if (name && !grpcExtraRoot.empty() && !grpcHookInstalled && std::string(name).ends_with("libgrpc_csharp_ext.so")) {
+    std::lock_guard lock(grpcHookMutex);
+    if (grpcHookInstalled) return;
+    void *credentialsTarget = dlsym(handle, "grpcsharp_ssl_credentials_create");
+    if (credentialsTarget) {
+      int rc = installHook(credentialsTarget, reinterpret_cast<void *>(createGrpcCredentials),
+                           reinterpret_cast<void **>(&originalGrpcCreateCredentials));
+      __android_log_print(ANDROID_LOG_INFO, kTag, "D4U credentials hook=%d", rc);
+    }
+    void *target = dlsym(handle, "grpcsharp_override_default_ssl_roots");
+    if (!target || installHook(target, reinterpret_cast<void *>(overrideGrpcRoots),
+                               reinterpret_cast<void **>(&originalOverrideRoots)) != 0) {
+      __android_log_print(ANDROID_LOG_ERROR, kTag, "D4U gRPC CA hook failed");
+    } else grpcHookInstalled = true;
+  }
   if (!enabled || installed || !name || !std::string(name).ends_with("libunity.so")) {
     return;
   }
@@ -217,6 +213,7 @@ LibraryLoaded native_init(const NativeApi *api) {
   }
   installHook = api->hook;
   removeHook = api->unhook;
+  legacy::sekai::setHookApi(api->hook);
   report("ready");
   return libraryLoaded;
 }
@@ -229,8 +226,26 @@ Java_dev_ryuya_legacygametools_HookEntry_configure(JNIEnv *, jclass, jboolean va
   }
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_dev_ryuya_legacygametools_HookEntry_configureGrpcCa(JNIEnv *env, jclass, jstring path) {
+  const char *filename = env->GetStringUTFChars(path, nullptr);
+  if (!filename) return;
+  std::ifstream file(filename);
+  std::string pem((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+  env->ReleaseStringUTFChars(path, filename);
+  if (pem.find("-----BEGIN CERTIFICATE-----") != std::string::npos && pem.size() < 65536) {
+    grpcExtraRoot = std::move(pem);
+    __android_log_print(ANDROID_LOG_INFO, kTag, "D4U local gRPC CA configured");
+  }
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_dev_ryuya_legacygametools_HookEntry_nativeStatus(JNIEnv *env, jclass) {
   std::lock_guard lock(statusMutex);
   return env->NewStringUTF(status.c_str());
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_dev_ryuya_legacygametools_HookEntry_configureSekaiBpm(JNIEnv *, jclass, jboolean allowed) {
+  legacy::sekai::configure(allowed);
 }
