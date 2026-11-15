@@ -3,11 +3,14 @@ import java.util.Properties
 plugins {
     id("com.android.application")
 }
-val releaseKeys = Properties().apply {
-    providers.environmentVariable("ONEUI_SIGNING_PROPERTIES").orNull?.let { path ->
-        file(path).inputStream().use { load(it) }
+
+val releaseKeys =
+    Properties().apply {
+        providers.environmentVariable("ONEUI_SIGNING_PROPERTIES").orNull?.let { path ->
+            file(path).reader(Charsets.UTF_8).use { load(it) }
+        }
     }
-}
+
 android {
     namespace = "dev.ryuya.legacygametools"
     compileSdk = 37
@@ -18,18 +21,19 @@ android {
         applicationId = "dev.ryuya.legacygametools"
         minSdk = 31
         targetSdk = 37
-        versionCode = 12
-        versionName = "0.2.1"
+        versionCode = 13
+        versionName = "0.2.2"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DANDROID_STL=c++_static" } }
     }
     signingConfigs {
-        if (!releaseKeys.isEmpty) create("distribution") {
-            storeFile = file(releaseKeys.getProperty("storeFile"))
-            storePassword = releaseKeys.getProperty("storePassword")
-            keyAlias = releaseKeys.getProperty("keyAlias")
-            keyPassword = releaseKeys.getProperty("keyPassword")
-        }
+        if (!releaseKeys.isEmpty)
+            create("distribution") {
+                storeFile = file(releaseKeys.getProperty("storeFile"))
+                storePassword = releaseKeys.getProperty("storePassword")
+                keyAlias = releaseKeys.getProperty("keyAlias")
+                keyPassword = releaseKeys.getProperty("keyPassword")
+            }
     }
     buildTypes {
         release {
@@ -50,6 +54,7 @@ android {
     }
     lint { abortOnError = true }
 }
+
 dependencies {
     testImplementation("junit:junit:4.13.2")
     implementation("io.github.libxposed:service:102.0.0")
@@ -58,47 +63,76 @@ dependencies {
     implementation("com.google.android.material:material:1.14.0")
 }
 
-val exportRuntimeComponents = tasks.register("exportRuntimeComponents") {
-    doLast {
-        val components = configurations.getByName("debugRuntimeClasspath").resolvedConfiguration.resolvedArtifacts
-            .map { it.moduleVersion.id.toString() }.toSortedSet()
-        val file = layout.buildDirectory.file("runtime-components.txt").get().asFile
-        file.parentFile.mkdirs()
-        file.writeText(components.joinToString("\n") + "\n")
-    }
-}
-val generatedLicenses = layout.buildDirectory.dir("generated/licenseAssets")
-android.sourceSets.getByName("main").assets.directories.add(generatedLicenses.get().asFile.absolutePath)
-val dependencyLicenses = tasks.register("generateDependencyLicenses") {
-    dependsOn(exportRuntimeComponents)
-    inputs.file(rootProject.file("third_party/components.tsv"))
-    inputs.dir(rootProject.file("third_party"))
-    inputs.file(rootProject.file("LICENSE"))
-    inputs.file(layout.buildDirectory.file("runtime-components.txt"))
-    outputs.dir(generatedLicenses)
-    doLast {
-        val rows = rootProject.file("third_party/components.tsv").readLines()
-            .filter { it.isNotBlank() && !it.startsWith("#") }
-            .map { it.split('\t') }
-        val licensed = rows.map { it[0] }.toSet()
-        val actual = layout.buildDirectory.file("runtime-components.txt").get().asFile.readLines()
-            .filter { it.isNotBlank() }.toSet() + "io.github.libxposed:api:102.0.0"
-        check(actual == licensed) { "Review dependency licenses: missing=${actual-licensed}; obsolete=${licensed-actual}" }
-        val out = generatedLicenses.get().asFile
-        out.mkdirs()
-        rootProject.file("LICENSE").copyTo(out.resolve("APP_LICENSE.txt"), true)
-        val notices = buildString {
-            append("Bundled runtime dependencies (including transitive dependencies), plus compile-only Xposed API.\n\n")
-            append("AndroidX / Material: The Android Open Source Project and respective contributors.\nKotlin / coroutines / annotations: JetBrains and respective contributors.\nGuava / Error Prone / J2ObjC / JSpecify: Google and respective contributors.\nlibxposed API: libxposed contributors.\n\n")
-            for (row in rows) {
-                append(row[0] + "\n" + row[1] + "\n" + row.getOrElse(3) { "" } + "\n\n")
-            }
-            for (name in rows.map { it[2] }.distinct()) {
-                append("\n===== $name =====\n\n")
-                append(rootProject.file("third_party/$name").readText())
-            }
+val exportRuntimeComponents =
+    tasks.register("exportRuntimeComponents") {
+        doLast {
+            val components =
+                configurations
+                    .getByName("debugRuntimeClasspath")
+                    .resolvedConfiguration
+                    .resolvedArtifacts
+                    .map { it.moduleVersion.id.toString() }
+                    .toSortedSet()
+            val file = layout.buildDirectory.file("runtime-components.txt").get().asFile
+            file.parentFile.mkdirs()
+            file.writeText(components.joinToString("\n") + "\n")
         }
-        out.resolve("THIRD_PARTY_NOTICES.txt").writeText(notices)
     }
-}
+val generatedLicenses = layout.buildDirectory.dir("generated/licenseAssets")
+
+android.sourceSets
+    .getByName("main")
+    .assets
+    .directories
+    .add(generatedLicenses.get().asFile.absolutePath)
+
+val dependencyLicenses =
+    tasks.register("generateDependencyLicenses") {
+        dependsOn(exportRuntimeComponents)
+        inputs.file(rootProject.file("third_party/components.tsv"))
+        inputs.dir(rootProject.file("third_party"))
+        inputs.file(rootProject.file("LICENSE"))
+        inputs.file(layout.buildDirectory.file("runtime-components.txt"))
+        outputs.dir(generatedLicenses)
+        doLast {
+            val rows =
+                rootProject
+                    .file("third_party/components.tsv")
+                    .readLines()
+                    .filter { it.isNotBlank() && !it.startsWith("#") }
+                    .map { it.split('\t') }
+            val licensed = rows.map { it[0] }.toSet()
+            val actual =
+                layout.buildDirectory
+                    .file("runtime-components.txt")
+                    .get()
+                    .asFile
+                    .readLines()
+                    .filter { it.isNotBlank() }
+                    .toSet() + "io.github.libxposed:api:102.0.0"
+            check(actual == licensed) {
+                "Review dependency licenses: missing=${actual-licensed}; obsolete=${licensed-actual}"
+            }
+            val out = generatedLicenses.get().asFile
+            out.mkdirs()
+            rootProject.file("LICENSE").copyTo(out.resolve("APP_LICENSE.txt"), true)
+            val notices = buildString {
+                append(
+                    "Bundled runtime dependencies (including transitive dependencies), plus compile-only Xposed API.\n\n",
+                )
+                append(
+                    "AndroidX / Material: The Android Open Source Project and respective contributors.\nKotlin / coroutines / annotations: JetBrains and respective contributors.\nGuava / Error Prone / J2ObjC / JSpecify: Google and respective contributors.\nlibxposed API: libxposed contributors.\n\n",
+                )
+                for (row in rows) {
+                    append(row[0] + "\n" + row[1] + "\n" + row.getOrElse(3) { "" } + "\n\n")
+                }
+                for (name in rows.map { it[2] }.distinct()) {
+                    append("\n===== $name =====\n\n")
+                    append(rootProject.file("third_party/$name").readText())
+                }
+            }
+            out.resolve("THIRD_PARTY_NOTICES.txt").writeText(notices)
+        }
+    }
+
 tasks.named("preBuild").configure { dependsOn(dependencyLicenses) }

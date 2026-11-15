@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import dev.ryuya.legacygametools.startup.FirstUnlockGate
 import io.github.libxposed.api.XposedInterface.Chain
 import io.github.libxposed.api.XposedInterface.Hooker
 import io.github.libxposed.api.XposedModule
@@ -17,6 +18,7 @@ import kotlin.jvm.JvmStatic
 /* Loads the native compatibility layer before the game's Unity library. */
 class HookEntry : XposedModule() {
     private var processName: String? = null
+    private val firstUnlock = FirstUnlockGate()
 
     override fun onModuleLoaded(param: ModuleLoadedParam) {
         processName = param.getProcessName()
@@ -31,86 +33,82 @@ class HookEntry : XposedModule() {
                 .intercept(
                     Hooker { chain: Chain ->
                         val context = chain.getArgs()[0] as Context
-                        var enabled: Boolean = false
-                        try {
-                            val settings =
-                                context
-                                    .getContentResolver()
-                                    .call(ConfigProvider.URI, "read", game, null)
-                            enabled = settings != null && settings.getBoolean("enabled", false)
-                            System.loadLibrary("legacycompat")
-                            HookEntry.configure(enabled)
-                            var sekaiBpm: Boolean = false
-                            if (enabled && Games.SEKAI == game) {
-                                val info = context.getPackageManager().getPackageInfo(game, 0)
-                                sekaiBpm =
-                                    info.getLongVersionCode() == 200005L &&
-                                        "1.0.0" == info.versionName
-                            }
-                            if (sekaiBpm) {
-                                val unity =
-                                    context
-                                        .getClassLoader()
-                                        .loadClass("com.unity3d.player.UnityPlayer")
-                                val focus =
-                                    unity.getDeclaredMethod(
-                                        "windowFocusChanged",
-                                        Boolean::class.javaPrimitiveType,
-                                    )
-                                hook(focus)
-                                    .intercept(
-                                        Hooker { focusChain: Chain ->
-                                            HookEntry.setSekaiFocused(
-                                                focusChain.getArgs().get(0) as Boolean
+                        // Already-unlocked launches configure native compatibility synchronously,
+                        // before Unity loads. Locked hosts never read the module's CE settings.
+                        firstUnlock.run(context) {
+                            configureCompatibility(context, game)
+                            Handler(Looper.getMainLooper())
+                                .postDelayed(
+                                    Runnable {
+                                        try {
+                                            HookEntry.report(
+                                                context,
+                                                game,
+                                                HookEntry.nativeStatus(),
                                             )
-                                            focusChain.proceed()
-                                        }
-                                    )
-                            }
-                            HookEntry.configureSekaiBpm(sekaiBpm)
-                            HookEntry.configureSekaiLife(
-                                sekaiBpm &&
-                                    settings != null &&
-                                    settings.getBoolean("prevent_life_loss", true)
-                            )
-                            HookEntry.configureSekaiFlow(
-                                sekaiBpm &&
-                                    settings != null &&
-                                    settings.getBoolean("title_tap", true),
-                                sekaiBpm &&
-                                    settings != null &&
-                                    settings.getBoolean("fast_transition", true),
-                            )
-                            if (Games.D4U == game && context.getExternalFilesDir(null) != null) {
-                                val ca =
-                                    File(context.getExternalFilesDir(null), "local-grpc-ca.pem")
-                                if (ca.isFile()) HookEntry.configureGrpcCa(ca.getAbsolutePath())
-                            }
-                            Log.i("LegacyGameTools", game + " compatibility=" + enabled)
-                        } catch (error: Throwable) {
-                            log(
-                                Log.ERROR,
-                                "LegacyGameTools",
-                                "Could not initialize compatibility",
-                                error,
-                            )
-                            HookEntry.report(context, game, "load_failed")
+                                        } catch (ignored: LinkageError) {}
+                                    },
+                                    1500,
+                                )
                         }
-                        val result = chain.proceed()
-                        Handler(Looper.getMainLooper())
-                            .postDelayed(
-                                Runnable {
-                                    try {
-                                        HookEntry.report(context, game, HookEntry.nativeStatus())
-                                    } catch (ignored: LinkageError) {}
-                                },
-                                1500,
-                            )
-                        result
-                    }
+                        chain.proceed()
+                    },
                 )
         } catch (error: ReflectiveOperationException) {
             log(Log.ERROR, "LegacyGameTools", "Application lifecycle unavailable", error)
+        }
+    }
+
+    private fun configureCompatibility(context: Context, game: String) {
+        var enabled: Boolean = false
+        try {
+            val settings = context.getContentResolver().call(ConfigProvider.URI, "read", game, null)
+            enabled = settings != null && settings.getBoolean("enabled", false)
+            System.loadLibrary("legacycompat")
+            HookEntry.configure(enabled)
+            var sekaiBpm: Boolean = false
+            if (enabled && Games.SEKAI == game) {
+                val info = context.getPackageManager().getPackageInfo(game, 0)
+                sekaiBpm = info.getLongVersionCode() == 200005L && "1.0.0" == info.versionName
+            }
+            if (sekaiBpm) {
+                val unity = context.getClassLoader().loadClass("com.unity3d.player.UnityPlayer")
+                val focus =
+                    unity.getDeclaredMethod(
+                        "windowFocusChanged",
+                        Boolean::class.javaPrimitiveType,
+                    )
+                hook(focus)
+                    .intercept(
+                        Hooker { focusChain: Chain ->
+                            HookEntry.setSekaiFocused(
+                                focusChain.getArgs().get(0) as Boolean,
+                            )
+                            focusChain.proceed()
+                        },
+                    )
+            }
+            HookEntry.configureSekaiBpm(sekaiBpm)
+            HookEntry.configureSekaiLife(
+                sekaiBpm && settings != null && settings.getBoolean("prevent_life_loss", true),
+            )
+            HookEntry.configureSekaiFlow(
+                sekaiBpm && settings != null && settings.getBoolean("title_tap", true),
+                sekaiBpm && settings != null && settings.getBoolean("fast_transition", true),
+            )
+            if (Games.D4U == game && context.getExternalFilesDir(null) != null) {
+                val ca = File(context.getExternalFilesDir(null), "local-grpc-ca.pem")
+                if (ca.isFile()) HookEntry.configureGrpcCa(ca.getAbsolutePath())
+            }
+            Log.i("LegacyGameTools", game + " compatibility=" + enabled)
+        } catch (error: Throwable) {
+            log(
+                Log.ERROR,
+                "LegacyGameTools",
+                "Could not initialize compatibility",
+                error,
+            )
+            HookEntry.report(context, game, "load_failed")
         }
     }
 
