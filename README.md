@@ -1,5 +1,7 @@
 # Legacy Game Tools
 
+[日本語](README.md) · [English](README.en.md)
+
 古いゲームが現在のAndroidで起動直後にクラッシュする問題を改善する、Vector用の互換モジュールです。
 
 ## 対応するゲーム
