@@ -60,3 +60,5 @@ The SEKAI settings include **Prevent life loss during live play**, ON by default
 **Tap to skip title call** and **Shorten the white live-start transition** are independently switchable and ON by default. Loading, authentication, and song/note synchronization are preserved while title-voice waiting and the white effect are shortened. Close and reopen the game after changes. Android 17 hardware testing confirmed tapping during a playing title call to reach the live menu and progressing into a live session after the white transition. Stock fade duration and particles are retained. Targets and validation scope are documented in the [developer notes (Japanese)](docs/sekai-flow.md).
 
 For solo play, the six-second fixed wait also ends early only after audio preparation, the fade, and the stock transition display are confirmed complete. If completion cannot be confirmed, the module retains the original-equivalent wait. This is controlled by **Shorten the white live-start transition** as well.
+
+[Build environment / ビルド環境](docs/build-environment.md)

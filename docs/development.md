@@ -18,7 +18,7 @@ Providerの読み取りと診断書き込みは、対象ゲームのUIDから、
 
 ## ビルドと確認
 
-- JDK 21、Gradle 9.6.1、AGP 9.3.2
+- JDK 27、Gradle 9.9.1、AGP 9.5.1
 - compile/target SDK 37、Build Tools 37.0.0
 - NDK 30.0.16248370、CMake 3.22.1、arm64-v8a
 - Material 3、libxposed API 102
@@ -43,3 +43,5 @@ Android 17の実機では修正前に2本とも同じ追跡系統で起動クラ
 ## CPU・メモリ効率
 
 [変更内容と検証範囲](efficiency.md)を参照してください。
+
+[Build environment / ビルド環境](build-environment.md)

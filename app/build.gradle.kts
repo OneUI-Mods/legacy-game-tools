@@ -13,7 +13,9 @@ val releaseKeys =
 
 android {
     namespace = "dev.ryuya.legacygametools"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) { minorApiLevel = 2 }
+    }
     buildToolsVersion = "37.0.0"
     ndkVersion = "30.0.16248370"
     buildFeatures { buildConfig = true }
@@ -45,7 +47,7 @@ android {
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
+            version = "4.1.2"
         }
     }
     compileOptions {

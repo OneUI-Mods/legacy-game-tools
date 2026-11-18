@@ -73,14 +73,14 @@ class MainActivity : AppCompatActivity() {
                     Intent(
                         Intent.ACTION_VIEW,
                         Uri.parse("https://github.com/OneUI-Mods/legacy-game-tools"),
-                    )
+                    ),
                 )
-            }
+            },
         )
         about.addView(source)
         val licenses = button(getString(R.string.licenses))
         licenses.setOnClickListener(
-            android.view.View.OnClickListener { view: View -> showLicenses() }
+            android.view.View.OnClickListener { view: View -> showLicenses() },
         )
         about.addView(licenses)
     }
@@ -107,7 +107,7 @@ class MainActivity : AppCompatActivity() {
         toggle.setOnCheckedChangeListener(
             OnCheckedChangeListener { button: CompoundButton?, checked: Boolean ->
                 preferences.edit().putBoolean(game, checked).apply()
-            }
+            },
         )
         card.addView(toggle)
         if (Games.SEKAI == game) {
@@ -119,15 +119,15 @@ class MainActivity : AppCompatActivity() {
             life.setOnCheckedChangeListener(
                 OnCheckedChangeListener { button: CompoundButton?, checked: Boolean ->
                     preferences.edit().putBoolean("sekai.prevent_life_loss", checked).apply()
-                }
+                },
             )
             toggle.setOnCheckedChangeListener(
                 OnCheckedChangeListener { button: CompoundButton?, checked: Boolean ->
                     preferences.edit().putBoolean(game, checked).apply()
                     life.setEnabled(checked)
-                    card.findViewWithTag<View?>("title_tap").setEnabled(checked)
-                    card.findViewWithTag<View?>("fast_transition").setEnabled(checked)
-                }
+                    card.findViewWithTag<View?>("title_tap")?.setEnabled(checked)
+                    card.findViewWithTag<View?>("fast_transition")?.setEnabled(checked)
+                },
             )
             card.addView(life)
             card.addView(text(getString(R.string.prevent_life_loss_note), false))
@@ -145,7 +145,7 @@ class MainActivity : AppCompatActivity() {
             android.view.View.OnClickListener { view: View ->
                 val launch = getPackageManager().getLaunchIntentForPackage(game)
                 if (launch != null) startActivity(launch)
-            }
+            },
         )
         card.addView(open)
     }
@@ -160,7 +160,7 @@ class MainActivity : AppCompatActivity() {
         option.setOnCheckedChangeListener(
             OnCheckedChangeListener { button: CompoundButton?, checked: Boolean ->
                 preferences.edit().putBoolean("sekai." + key, checked).apply()
-            }
+            },
         )
         card.addView(option)
     }
@@ -183,7 +183,7 @@ class MainActivity : AppCompatActivity() {
                 }
             view.setText(
                 if ("not_run" == status) getString(label)
-                else getString(R.string.last_status, getString(label))
+                else getString(R.string.last_status, getString(label)),
             )
         }
     }
@@ -264,7 +264,7 @@ class MainActivity : AppCompatActivity() {
         result.setText(value)
         result.setTextAppearance(
             if (title) MaterialR.style.TextAppearance_Material3_TitleLarge
-            else MaterialR.style.TextAppearance_Material3_BodyMedium
+            else MaterialR.style.TextAppearance_Material3_BodyMedium,
         )
         result.setPadding(0, dp(4f), 0, dp(8f))
         return result
