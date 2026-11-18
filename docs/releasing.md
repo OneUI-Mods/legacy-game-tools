@@ -3,7 +3,7 @@
 配布するAPKはrelease variantに限ります。debug・検証用Activity・ゲームのバイナリを含めません。秘密鍵やパスワードはリポジトリ、配布物、ログへ記録しません。
 
 1. 全ソースをコミットし、作業ツリーをクリーンにします。
-2. `JAVA_HOME`をJDK 21、`ANDROID_HOME`をSDK、`ONEUI_SIGNING_PROPERTIES`を非公開の署名設定ファイルへ設定します。
+2. `JAVA_HOME`をJDK 27、`ANDROID_HOME`をSDK、`ONEUI_SIGNING_PROPERTIES`を非公開の署名設定ファイルへ設定します。
 3. `python3 tools/package_release.py --source-ref HEAD`を実行します。
 4. `artifacts/release/バージョン/`の署名済みAPK、対応ソースZIP、SHA-256一覧、署名検証結果をGitHub Releaseへ添付します。
 
