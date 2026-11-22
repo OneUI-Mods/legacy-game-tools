@@ -7,3 +7,5 @@ artifacts/
 *.keystore
 *-signing.properties
 **/.cxx/
+
+__pycache__/

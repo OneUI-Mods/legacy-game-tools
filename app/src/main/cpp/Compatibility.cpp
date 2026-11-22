@@ -228,7 +228,7 @@ LibraryLoaded native_init(const NativeApi *api) {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_dev_ryuya_legacygametools_HookEntry_configure(JNIEnv *, jclass, jboolean value) {
+Java_dev_ryuya_legacygametools_nativebridge_NativeBindings_configure(JNIEnv *, jclass, jboolean value) {
   enabled = value;
   if (!enabled) {
     report("disabled");
@@ -236,7 +236,7 @@ Java_dev_ryuya_legacygametools_HookEntry_configure(JNIEnv *, jclass, jboolean va
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_dev_ryuya_legacygametools_HookEntry_configureGrpcCa(JNIEnv *env, jclass, jstring path) {
+Java_dev_ryuya_legacygametools_nativebridge_NativeBindings_configureGrpcCa(JNIEnv *env, jclass, jstring path) {
   const char *filename = env->GetStringUTFChars(path, nullptr);
   if (!filename) return;
   std::ifstream file(filename);
@@ -249,29 +249,29 @@ Java_dev_ryuya_legacygametools_HookEntry_configureGrpcCa(JNIEnv *env, jclass, js
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_dev_ryuya_legacygametools_HookEntry_nativeStatus(JNIEnv *env, jclass) {
+Java_dev_ryuya_legacygametools_nativebridge_NativeBindings_nativeStatus(JNIEnv *env, jclass) {
   std::lock_guard lock(statusMutex);
   return env->NewStringUTF(status.c_str());
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_dev_ryuya_legacygametools_HookEntry_configureSekaiBpm(JNIEnv *, jclass, jboolean allowed) {
+Java_dev_ryuya_legacygametools_nativebridge_NativeBindings_configureSekaiBpm(JNIEnv *, jclass, jboolean allowed) {
   legacy::sekai::configure(allowed);
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_dev_ryuya_legacygametools_HookEntry_configureSekaiLife(JNIEnv *, jclass, jboolean enabled) {
+Java_dev_ryuya_legacygametools_nativebridge_NativeBindings_configureSekaiLife(JNIEnv *, jclass, jboolean enabled) {
   legacy::sekai::life::configure(enabled);
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_dev_ryuya_legacygametools_HookEntry_configureSekaiFlow(
+Java_dev_ryuya_legacygametools_nativebridge_NativeBindings_configureSekaiFlow(
     JNIEnv *, jclass, jboolean titleTap, jboolean fastTransition) {
   legacy::sekai::flow::configure(titleTap, fastTransition);
   legacy::sekai::ready::configure(fastTransition);
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_dev_ryuya_legacygametools_HookEntry_setSekaiFocused(JNIEnv *, jclass, jboolean focused) {
+Java_dev_ryuya_legacygametools_nativebridge_NativeBindings_setSekaiFocused(JNIEnv *, jclass, jboolean focused) {
   legacy::sekai::flow::setFocused(focused);
 }
