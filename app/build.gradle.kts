@@ -21,10 +21,10 @@ android {
     buildFeatures { buildConfig = true }
     defaultConfig {
         applicationId = "dev.ryuya.legacygametools"
-        minSdk = 31
+        minSdk = 37
         targetSdk = 37
-        versionCode = 15
-        versionName = "0.2.4"
+        versionCode = 16
+        versionName = "0.2.5"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DANDROID_STL=c++_static" } }
     }

@@ -1,5 +1,7 @@
 # Legacy Game Tools
 
+Installation requires Android 17 (API 37) or later.
+
 [日本語](README.md) · English
 
 A Vector compatibility module addressing startup crashes in old games on current Android versions.
@@ -32,7 +34,7 @@ The module compensates for old Unity memory-tracking code that cannot handle cur
 
 Both demos' online services have ended. This app does not restore servers or services and does not distribute game data. It does not guarantee progress beyond network waits or that the entire game is playable.
 
-Physical testing on Android 17 / Galaxy S26 Ultra reached D4U's network-wait screen and SEKAI's post-startup notice screen. Installation is supported on Android 12+, but other devices and OS versions are unverified.
+Physical testing on Android 17 / Galaxy S26 Ultra reached D4U's network-wait screen and SEKAI's post-startup notice screen. Other devices and OS versions are unverified.
 
 ## SEKAI BPM definitions
 
